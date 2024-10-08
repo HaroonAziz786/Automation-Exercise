@@ -89,61 +89,54 @@ public class GoogleSteps {
 
 
 
-@Then("result stats are displayed")
-public void result_stats_are_displayed() {
-    try {
-        // Click the "Tools" button
-        WebElement toolsButton = wait.until(ExpectedConditions.elementToBeClickable(By.id("hdtb-tls")));
-        toolsButton.click();
-
-        // Wait for the result stats to be visible after clicking "Tools"
-        WebElement resultStats = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[@id='result-stats']")));
-
-        // Extracting text from result stats (e.g., "About 1,510,000,000 results (0.32 seconds)")
-        String statsText = resultStats.getText(); 
-        System.out.println("Result Stats Text: " + statsText); // Debug output to see the actual text
-        
-        // Normalize spaces in the text
-        statsText = statsText.replace("\u00A0", " ");
-
-        // Split to extract the number of results (e.g., "1,510,000,000")
-        String resultsCountStr = statsText.split(" ")[1].replace(",", "").trim(); // Get second word, remove commas
-        int resultsCount = Integer.parseInt(resultsCountStr); // Convert to int
-        
-        // Save resultsCount for further assertions
-        this.resultsCount = resultsCount;
-
-        // Assert that the number of results is greater than 1
-        assertTrue("Number of results is not greater than 1. Actual count: " + resultsCount, resultsCount > 1);
-
-        // Split to extract the time (e.g., "0.32")
-        String timeStr = statsText.split("\\(")[1].split(" ")[0]; // Get value inside parentheses
-        double seconds = Double.parseDouble(timeStr); // Convert to double
-        
-        // Save timeTaken for further assertions
-        this.timeTaken = seconds;
-
-        // Assert that the time taken is greater than 0
-        assertTrue("Time taken is not greater than 0 seconds. Actual time: " + seconds, seconds > 0);
-
-    } catch (NoSuchElementException e) {
-        assertTrue("Tools button not found.", false);
-    } catch (TimeoutException e) {
-        assertTrue("Timed out waiting for Tools button to be clickable.", false);
-    } catch (NumberFormatException e) {
-        assertTrue("Error parsing the results count or time from result stats.", false);
-    }
-}
-
-
+    @Then("result stats are displayed")
+    public void result_stats_are_displayed() {
+        try {
+            // Click the "Tools" button if needed
+            WebElement toolsButton = wait.until(ExpectedConditions.elementToBeClickable(By.id("hdtb-tls")));
+            toolsButton.click();
     
-@Then("number of {string} is more than {int}")
-public void number_of_is_more_than(String type, int threshold) {
-    if (type.equals("results")) {
-        assertTrue("Number of results is not greater than " + threshold, this.resultsCount > threshold);
-    } else if (type.equals("seconds")) {
-        assertTrue("Time taken is not greater than " + threshold + " seconds. Actual time: " + this.timeTaken, this.timeTaken > threshold);
+            // Wait for the result stats to be visible
+            WebElement resultStats = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("result-stats")));
+            
+            // Assert that result stats element is displayed
+            assertTrue("Result stats are not displayed.", resultStats.isDisplayed());
+    
+        } catch (NoSuchElementException e) {
+            assertTrue("Tools button or Result stats element not found.", false);
+        } catch (TimeoutException e) {
+            assertTrue("Timed out waiting for result stats to be visible.", false);
+        }
     }
-}
+    
+
+    @Then("number of {string} is more than {int}")
+    public void number_of_is_more_than(String type, int threshold) {
+        try {
+            // Wait for the result stats to be visible
+            WebElement resultStats = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("result-stats")));
+            String statsText = resultStats.getText();
+    
+            if (type.equals("results")) {
+                // Extract and parse the results count
+                String resultsCountStr = statsText.split(" ")[1].replace(",", ""); // Remove commas
+                int resultsCount = Integer.parseInt(resultsCountStr);
+    
+                // Assert that the number of results is greater than the threshold
+                assertTrue("Number of results is not greater than " + threshold + ". Actual: " + resultsCount, resultsCount > threshold);
+    
+            } else if (type.equals("seconds")) {
+                // Extract and parse the time taken
+                String timeStr = statsText.split("\\(")[1].split(" ")[0]; // Extract the time in seconds
+                double seconds = Double.parseDouble(timeStr);
+    
+                // Assert that the time taken is greater than the threshold
+                assertTrue("Time taken is not greater than " + threshold + " seconds. Actual: " + seconds, seconds > threshold);
+            }
+    
+        } catch (Exception e) {
+            assertTrue("Failed to parse the stats for type: " + type, false);
+        }
+    }
     
 }
